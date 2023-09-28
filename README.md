@@ -1,2 +1,1 @@
-# Escape-Room
-A program that puts user in a random situation, like an escape room. The user has to solve riddles and answer questions to escape
+The project is a text-based escape room game implemented in Python. It challenges the player to progress through a series of rooms, each with its unique puzzle or question. The game starts with a simple riddle, and as the player advances, they encounter increasingly challenging puzzles and questions. The player is given a limited number of attempts to solve each puzzle or answer each question correctly. If they fail to do so, the escape room's walls start closing in, adding urgency and excitement to the gameplay. The ultimate goal is to successfully navigate the escape room's challenges and reach the final room to escape.
