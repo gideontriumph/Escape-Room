@@ -1,92 +1,114 @@
-import random
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
 
-# Define the escape room as a list of rooms with increasing difficulty
-escape_room = [
-    {
-        'name': 'Entrance Hall',
-        'description': 'You are in the Entrance Hall of the escape room. You see a locked door ahead. '
-                       'To open it, you need to answer a riddle:',
-        'riddle': 'I am taken from a mine, and shut up in a wooden case, from which I am never released, '
-                  'and yet I am used by almost every person. What am I?',
-        'answer': 'pencil',
-    },
-    {
-        'name': 'Library',
-        'description': 'You enter the Library. There is a bookshelf with various books. You need to find a book '
-                       'that contains a clue to open the next door.',
-        'clue': 'The clue is hidden in the book titled "The Art of Deduction."',
-    },
-    {
-        'name': 'Puzzle Room',
-        'description': 'You enter the Puzzle Room. There is a table with a jigsaw puzzle on it. You must complete '
-                       'the puzzle to reveal the code to unlock the next door.',
-        'puzzle_solution': '1234',
-    },
-    {
-        'name': 'Treasure Room',
-        'description': 'You find the Treasure Room. There are three chests, each with a lock. To open them, '
-                       'you need to answer a question:',
-        'question': 'What has keys but can\'t open locks?',
-        'answer': 'a piano',
-    },
-    {
-        'name': 'Escape!',
-        'description': 'Congratulations! You have successfully escaped from the escape room!',
-    },
-]
+class TheSecretChamber(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.current_room = "start"
+        self.attempts_remaining = 5
+        self.initUI()
 
-# Initialize the player's position in the escape room
-current_position = 0
+    def initUI(self):
+        self.setWindowTitle("The Secret Chamber")
+        self.setGeometry(100, 100, 400, 200)
 
-# Number of tries for questions
-max_question_tries = 3
+        layout = QVBoxLayout()
 
-# Main game loop
-while current_position < len(escape_room):
-    room = escape_room[current_position]
-    print(f'You are in the {room["name"]}.')
-    print(room['description'])
+        self.description_label = QLabel()
+        self.puzzle_label = QLabel()
+        self.answer_entry = QLineEdit()
+        self.solve_button = QPushButton("Solve")
 
-    if 'riddle' in room:
-        tries = 0
-        while tries < max_question_tries:
-            user_answer = input('Your answer: ').lower()
-            if user_answer == room['answer']:
-                print('Correct!\n')
-                current_position += 1
-                break
-            else:
-                tries += 1
-                if tries < max_question_tries:
-                    print('Incorrect answer. Try again.')
-                else:
-                    print('Oops! You have failed the riddle. The walls start closing in.\n')
-                    break
+        self.solve_button.clicked.connect(self.solve_puzzle)
+        self.answer_entry.returnPressed.connect(self.solve_button.click)
 
-    elif 'clue' in room:
-        print(f'Hint: {room["clue"]}\n')
-        current_position += 1
-    elif 'puzzle_solution' in room:
-        user_solution = input('Enter the puzzle solution: ')
-        if user_solution == room['puzzle_solution']:
-            print('Puzzle solved!\n')
-            current_position += 1
+        layout.addWidget(self.description_label)
+        layout.addWidget(self.puzzle_label)
+        layout.addWidget(self.answer_entry)
+        layout.addWidget(self.solve_button)
+
+        self.setLayout(layout)
+        self.show_room()
+
+    def show_room(self):
+        room_data = rooms[self.current_room]
+        self.description_label.setText(room_data["description"])
+        if "puzzle" in room_data:
+            self.puzzle_label.setText(f"Riddle: {room_data['puzzle']}")
+            self.answer_entry.show()
+            self.solve_button.show()
+            self.answer_entry.clear()
         else:
-            print('Incorrect solution. Keep trying.\n')
-    elif 'question' in room:
-        tries = 0
-        while tries < max_question_tries:
-            user_answer = input('Your answer: ').lower()
-            if user_answer == room['answer']:
-                print('Correct!\n')
-                current_position += 1
-                break
-            else:
-                tries += 1
-                if tries < max_question_tries:
-                    print('Incorrect answer. Try again.')
-                else:
-                    print('Oops! You have failed the question. The walls start closing in.\n')
-                    break
+            self.puzzle_label.clear()
+            self.answer_entry.hide()
+            self.solve_button.hide()
 
-print("Congratulations! You have successfully escaped from the escape room!")
+    def solve_puzzle(self):
+        user_answer = self.answer_entry.text().strip().lower()
+        correct_answer = rooms[self.current_room]["answer"]
+        if user_answer == correct_answer:
+            self.current_room = rooms[self.current_room]["next_room"]
+            if self.current_room == "exit":
+                self.show_congratulations()
+                sys.exit()
+            else:
+                self.attempts_remaining = 5
+                self.show_room()
+        else:
+            self.attempts_remaining -= 1
+            if self.attempts_remaining == 0:
+                self.show_error("Oops! That's not the correct answer. You've run out of attempts.")
+                self.current_room = "start"
+                self.attempts_remaining = 5
+                self.show_room()
+            else:
+                self.show_error(f"Oops! That's not the correct answer. {self.attempts_remaining} attempts remaining")
+
+    def show_congratulations(self):
+        QMessageBox.information(self, "Congratulations", "You've escaped from The Secret Chamber!")
+
+    def show_error(self, message):
+        QMessageBox.critical(self, "Incorrect", message)
+
+if __name__ == '__main__':
+    app = QApplication([])
+
+    rooms = {
+        "start": {
+            "description": "You are in the starting room of The Secret Chamber. There is a locked door ahead.",
+            "puzzle": "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?",
+            "answer": "an echo",
+            "next_room": "room_1",
+        },
+        "room_1": {
+            "description": "You enter the first room. Another locked door stands in your way.",
+            "puzzle": "You see a boat filled with people. It has not sunk, but when you look again, you don’t see a single person on the boat. Why?",
+            "answer": "all the people were married",
+            "next_room": "room_2",
+        },
+        "room_2": {
+            "description": "You are in the second room. A mysterious puzzle awaits.",
+            "puzzle": "I am not alive, but I can grow. I don't have lungs, but I need air. I don't have a mouth, but water kills me. What am I?",
+            "answer": "fire",
+            "next_room": "room_3",
+        },
+        "room_3": {
+            "description": "You enter the third room. Can you solve this one?",
+            "puzzle": "The more you take, the more you leave behind. What am I?",
+            "answer": "footsteps",
+            "next_room": "room_4",
+        },
+        "room_4": {
+            "description": "You are in the fourth room. The final riddle stands between you and the exit of The Secret Chamber.",
+            "puzzle": "I'm tall when I'm young and short when I'm old. What am I?",
+            "answer": "a candle",
+            "next_room": "exit",
+        },
+        "exit": {
+            "description": "Congratulations! You have successfully escaped from The Secret Chamber!",
+        },
+    }
+
+    ex = TheSecretChamber()
+    ex.show()
+    sys.exit(app.exec_())
