@@ -1,5 +1,7 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QSpacerItem
+from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
 
 class TheSecretChamber(QWidget):
     def __init__(self):
@@ -8,9 +10,16 @@ class TheSecretChamber(QWidget):
         self.attempts_remaining = 5
         self.initUI()
 
+        # Initialize Tic-Tac-Toe game variables
+        self.tic_tac_toe_board = [[None, None, None], [None, None, None], [None, None, None]]
+        self.current_player = "X"
+        self.games_won = 0
+        self.games_lost = 0
+        self.in_tic_tac_toe = False
+
     def initUI(self):
         self.setWindowTitle("The Secret Chamber")
-        self.setGeometry(100, 100, 400, 200)
+        self.setGeometry(100, 100, 400, 400)
 
         layout = QVBoxLayout()
 
@@ -27,6 +36,22 @@ class TheSecretChamber(QWidget):
         layout.addWidget(self.answer_entry)
         layout.addWidget(self.solve_button)
 
+        # Add a Tic-Tac-Toe board to the UI
+        self.tic_tac_toe_grid = QGridLayout()
+        for row in range(3):
+            for col in range(3):
+                button = QPushButton()
+                button.setFont(QFont("Arial", 18))
+                button.setFixedSize(60, 60)
+                button.clicked.connect(self.make_move)
+                self.tic_tac_toe_grid.addWidget(button, row, col)
+                button.hide()
+        layout.addLayout(self.tic_tac_toe_grid)
+
+        # Add some spacing to separate the Tic-Tac-Toe board from the other elements
+        spacer = QSpacerItem(1, 10)
+        layout.addItem(spacer)
+
         self.setLayout(layout)
         self.show_room()
 
@@ -38,10 +63,70 @@ class TheSecretChamber(QWidget):
             self.answer_entry.show()
             self.solve_button.show()
             self.answer_entry.clear()
+            # Hide the Tic-Tac-Toe board for riddles
+            self.hide_tic_tac_toe_board()
         else:
             self.puzzle_label.clear()
             self.answer_entry.hide()
             self.solve_button.hide()
+            # Show the Tic-Tac-Toe board after escaping
+            if self.in_tic_tac_toe:
+                self.show_tic_tac_toe_board()
+
+    def make_move(self):
+        # Handle a Tic-Tac-Toe move
+        button = self.sender()
+        row, col = self.tic_tac_toe_grid.getItemPosition(self.tic_tac_toe_grid.indexOf(button))
+        if self.tic_tac_toe_board[row][col] is None:
+            self.tic_tac_toe_board[row][col] = self.current_player
+            button.setText(self.current_player)
+            button.setEnabled(False)
+            if self.check_winner(row, col):
+                self.games_won += 1
+                if self.games_won >= 3:
+                    self.show_congratulations()
+                else:
+                    self.reset_tic_tac_toe_board()
+            else:
+                self.current_player = "X" if self.current_player == "O" else "O"
+
+    def check_winner(self, row, col):
+        # Check if the current player has won the game
+        player = self.current_player
+        # Check row
+        if all(self.tic_tac_toe_board[row][c] == player for c in range(3)):
+            return True
+        # Check column
+        if all(self.tic_tac_toe_board[r][col] == player for r in range(3)):
+            return True
+        # Check diagonals
+        if row == col and all(self.tic_tac_toe_board[i][i] == player for i in range(3)):
+            return True
+        if row + col == 2 and all(self.tic_tac_toe_board[i][2 - i] == player for i in range(3)):
+            return True
+        return False
+
+    def reset_tic_tac_toe_board(self):
+        # Reset the Tic-Tac-Toe board for a new game
+        for row in range(3):
+            for col in range(3):
+                self.tic_tac_toe_board[row][col] = None
+                button = self.tic_tac_toe_grid.itemAtPosition(row, col).widget()
+                button.setText("")
+                button.setEnabled(True)
+        self.current_player = "X"
+
+    def hide_tic_tac_toe_board(self):
+        for row in range(3):
+            for col in range(3):
+                button = self.tic_tac_toe_grid.itemAtPosition(row, col).widget()
+                button.hide()
+
+    def show_tic_tac_toe_board(self):
+        for row in range(3):
+            for col in range(3):
+                button = self.tic_tac_toe_grid.itemAtPosition(row, col).widget()
+                button.show()
 
     def solve_puzzle(self):
         user_answer = self.answer_entry.text().strip().lower()
@@ -49,18 +134,19 @@ class TheSecretChamber(QWidget):
         if user_answer == correct_answer:
             self.current_room = rooms[self.current_room]["next_room"]
             if self.current_room == "exit":
-                self.show_congratulations()
-                sys.exit()
+                self.in_tic_tac_toe = True  # Enable Tic-Tac-Toe after escaping
+                self.show_tic_tac_toe_board()
+                self.reset_tic_tac_toe_board()
+                self.attempts_remaining = 5
             else:
                 self.attempts_remaining = 5
-                self.show_room()
+            self.show_room()
         else:
             self.attempts_remaining -= 1
             if self.attempts_remaining == 0:
                 self.show_error("Oops! That's not the correct answer. You've run out of attempts.")
                 self.current_room = "start"
                 self.attempts_remaining = 5
-                self.show_room()
             else:
                 self.show_error(f"Oops! That's not the correct answer. {self.attempts_remaining} attempts remaining")
 
