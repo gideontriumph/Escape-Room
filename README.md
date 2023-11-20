@@ -1,1 +1,4 @@
-This week, I added a TicTacToe game after the user successfully escapes from all rooms, but the game is not fully functional yet. User gets five attempts each to answer five riddle questions in order to escape from the escape room.
+# Think Aloud
+
+## Number Guessing Game
+This is a simple number guessing game. The computer generates a random number between 1 and the user's input, which represents the maximum number
