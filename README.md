@@ -11,7 +11,7 @@ Welcome to The Secret Chamber, an immersive escape room Python game that puts yo
 4. Receive feedback on your answer and attempt to solve the riddle within the given attempts,
 5. Progress through rooms until you successfully escape.
 
-## Enjoy the challenge, and may your intellect guide you to freedom! ✨
+## Enjoy the challenge! ✨
 
 
 # Project 2: Number Guessing Game 🤔🎲
